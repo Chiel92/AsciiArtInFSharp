@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Sierpinski.fs" />
+    <Compile Include="AsciiDraw.fs" />
+    <Compile Include="Main.fs" />
+  </ItemGroup>
+
+</Project>
