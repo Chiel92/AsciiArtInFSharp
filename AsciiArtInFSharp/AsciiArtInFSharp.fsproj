@@ -6,8 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Sierpinski.fs" />
     <Compile Include="AsciiDraw.fs" />
+    <Compile Include="Sierpinski.fs" />
+    <Compile Include="Koch.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 
