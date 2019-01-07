@@ -45,7 +45,6 @@ let drawLine (grid:char[,]) (l:line) : point =
         | NorthEast -> fun (x,y) -> (x+1,y-1)
     generateSequence next startingcharpos length |> List.map (fun (x,y) -> grid.[x,y] <- character) |> ignore
     let intermediatepoints = generateSequence next (x,y) (length + 1)
-    Console.WriteLine(intermediatepoints.ToString())
     List.last intermediatepoints
 
 

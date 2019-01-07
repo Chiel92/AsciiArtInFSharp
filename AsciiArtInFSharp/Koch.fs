@@ -20,16 +20,33 @@ let drawEdge grid (side, start, length) =
         | UpLeft -> NorthEast
     drawLine grid (dir, start, length) |> ignore
 
+// (x,y) is the leftmost point
+let trianglePointUp (x,y) length =
+    [(Down, (x+length*2, y), length*2); (UpLeft, (x,y), length); (UpRight, (x+length, y-length), length)]
+// (x,y) is the leftmost point
+let trianglePointDown (x,y) length =
+    [(Up, (x+length*2, y), length*2); (DownLeft, (x,y), length); (DownRight, (x+length, y+length), length)]
+
+// TODO: add erasing lines
 let processEdge grid edge =
     drawEdge grid edge
     let (side, (x, y), length) = edge
     let third = length / 3
     let sixth = third / 2
     if sixth > 0 then
-        match side with
-        | Up -> 
-            [(Up, (x, y), third); (UpLeft,(x + third, y),sixth); (UpRight, (x + third + sixth, y - sixth),sixth); (Up, (x + 2*third, y), third)]
-        | _ -> []
+        // TODO: abstract over the difference in horizontal and vertical length
+        // TODO: abstract over the orientation
+        let result = 
+            match side with
+            | Up -> 
+                trianglePointUp (x + third, y) sixth
+            | DownRight ->
+                trianglePointUp (x - third * 2, y + third * 2) third
+            | DownLeft ->
+                trianglePointUp (x - third * 3, y - third) third
+            | _ -> []
+         // sort result s.t. Up and Down are drawn first
+        result |> List.sortBy (fun (dir, _, _) -> if dir = Up || dir = Down then 0 else 1)
     else []
 
 let rec processEdges grid edges =
@@ -38,15 +55,10 @@ let rec processEdges grid edges =
     | [] -> ()
 
 let run : char[,] =
-    let grid = Array2D.init<char> 80 20 (fun x y -> ' ')
-    //let path = [(SouthEast, 3);(NorthEast,1);(East,1);(SouthWest,1)]
-    //drawPath grid ((0,10),path) |> ignore
+    let grid = Array2D.init<char> 80 30 (fun x y -> ' ')
 
-    //let line = (East, (0,10), 9)
-    //drawLine grid line |> ignore
-
-    let edge = (Up, (0,10), 54)
-    let edges = processEdges grid [edge]
+    let edges = [(Up, (0,10), 18);(DownRight, (18,10), 9);(DownLeft, (9, 19), 9)]
+    processEdges grid edges |> ignore
 
     grid
 
