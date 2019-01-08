@@ -44,7 +44,6 @@ let kochpattern side start length =
     let edge3 = (nextside side, start3, length)
     let start4 = edge3 |> edgeToLine |> lineEnd
     let edge4 = (side, start4, length)
-    edge4 |> edgeToLine |> lineEnd |> ignore
     [edge1; edge2; edge3; edge4]
 
 let processEdge edge =
@@ -63,13 +62,20 @@ let rec processEdges edges =
     | [] -> []
 
 let run : char[,] =
-    let grid = Array2D.init<char> 80 30 (fun x y -> ' ')
+    let order = 4
 
-    let edges = [
-            (snowflakeside.Up, (20,10), 18);
-            (snowflakeside.DownRight, (56,10), 18);
-            (snowflakeside.DownLeft, (38, 28), 18);
-        ]
+    let size = pown 3 order
+    // A snowflake of size n needs 2n x n+1 space
+    let grid = Array2D.init<char> (2 * size) (size + size / 3) (fun x y -> ' ')
+
+    let start = (0, size / 3)
+    let edge1 = (snowflakeside.Up, start, size);
+    let end1 = edge1 |> edgeToLine |> lineEnd
+    let edge2 = (snowflakeside.DownRight, end1, size);
+    let end2 = edge2 |> edgeToLine |> lineEnd
+    let edge3 = (snowflakeside.DownLeft, end2, size);
+    let edges = [ edge1; edge2; edge3 ]
+
     let edgesToDraw = processEdges edges
      // sort result s.t. Up and Down are drawn first
     let lines = edgesToDraw |> List.sortBy (fun (dir, _, _) -> if dir = snowflakeside.Up || dir = snowflakeside.Down then 0 else 1) |> List.map edgeToLine
