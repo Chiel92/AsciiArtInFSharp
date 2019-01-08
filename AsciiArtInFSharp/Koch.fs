@@ -12,47 +12,30 @@ let (|>) value func =
   result
 #endif
 
-type SnowFlakeSide = Up = 0 | UpRight = 1 | DownRight = 2 | Down = 3 | DownLeft = 4 | UpLeft = 5
 
-let modulo m n = ((n % m) + m) % m
-
-let rotateSide (steps:int) (side:SnowFlakeSide) : SnowFlakeSide = LanguagePrimitives.EnumToValue side |> (+) steps |> modulo 6 |> LanguagePrimitives.EnumOfValue
-let nextSide : (SnowFlakeSide -> SnowFlakeSide) = rotateSide 1
-let previousSide = rotateSide -1
-
-
-// SnowFlakeSide, start, size of snowflake
-type Edge = SnowFlakeSide * point * int
+// Clockwise direction, start, size of snowflake
+type Edge = Direction * Point * int
 
 // We assume that we always draw clockwise
-let edgeToLine (side, start, size) =
-    let dir =
-        match side with
-        | SnowFlakeSide.Up -> East
-        | SnowFlakeSide.UpRight -> SouthEast
-        | SnowFlakeSide.DownRight -> SouthWest
-        | SnowFlakeSide.Down -> West
-        | SnowFlakeSide.DownLeft -> NorthWest
-        | SnowFlakeSide.UpLeft -> NorthEast
-        | _ -> failwith "Invalid snowflake side"
-    let length = if side = SnowFlakeSide.Up || side = SnowFlakeSide.Down then size * 2 else size
+let edgeToLine (dir, start, size) =
+    let length = if dir = East || dir = West then size * 2 else size
     (dir, start, length)
 
-// The SnowFlakeSide is the direction in which there has to be constructed a new wedge
-let kochpattern side start size = 
-    let edge1 = (side, start, size)
+// The SnowFlakedir is the direction in which there has to be constructed a new wedge
+let kochpattern dir start size = 
+    let edge1 = (dir, start, size)
     let start2 = edge1 |> edgeToLine |> lineEnd
-    let edge2 = (previousSide side, start2, size)
+    let edge2 = (previousDir dir, start2, size)
     let start3 = edge2 |> edgeToLine |> lineEnd
-    let edge3 = (nextSide side, start3, size)
+    let edge3 = (nextDir dir, start3, size)
     let start4 = edge3 |> edgeToLine |> lineEnd
-    let edge4 = (side, start4, size)
+    let edge4 = (dir, start4, size)
     [edge1; edge2; edge3; edge4]
 
-let processEdge (side, start, size) =
+let processEdge (dir, start, size) =
     let nextsize = size / 3
     if nextsize > 0 then
-        Some (kochpattern side start nextsize)
+        Some (kochpattern dir start nextsize)
     else None
 
 let rec processEdges edges =
@@ -72,16 +55,16 @@ let run : char[,] =
     let grid = Array2D.init<char> (2 * size) (size + size / 3) (fun x y -> ' ')
 
     let start = (0, size / 3)
-    let edge1 = (SnowFlakeSide.Up, start, size);
+    let edge1 = (East, start, size);
     let end1 = edge1 |> edgeToLine |> lineEnd
-    let edge2 = (SnowFlakeSide.DownRight, end1, size);
+    let edge2 = (SouthWest, end1, size);
     let end2 = edge2 |> edgeToLine |> lineEnd
-    let edge3 = (SnowFlakeSide.DownLeft, end2, size);
+    let edge3 = (NorthWest, end2, size);
     let edges = [ edge1; edge2; edge3 ]
 
     let edgesToDraw = processEdges edges
      // Sort result s.t. Up and Down are drawn first
-    let lines = edgesToDraw |> List.sortBy (fun (dir, _, _) -> if dir = SnowFlakeSide.Up || dir = SnowFlakeSide.Down then 0 else 1) |> List.map edgeToLine
+    let lines = edgesToDraw |> List.sortBy (fun (dir, _, _) -> if dir = East || dir = West then 0 else 1) |> List.map edgeToLine
     try
         List.map (drawLine grid) lines |> ignore
     with
