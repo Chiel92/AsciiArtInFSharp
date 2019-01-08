@@ -16,8 +16,7 @@ let rec private generateSequence succ state length = if length > 0 then state::(
 
 type linedir = East | SouthEast | SouthWest | West | NorthWest | NorthEast
 type point = int * int
-type length = int
-type line = linedir * point * length
+type line = linedir * point * int
 
 let private linedirSucc dir = 
     match dir with

@@ -1,5 +1,7 @@
 ﻿module Koch
 
+// TODO: use a monad to draw stuff
+
 open Microsoft.FSharp.Collections
 open AsciiDraw
 open System
@@ -10,75 +12,76 @@ let (|>) value func =
   result
 #endif
 
-// We assume that we always draw clockwise
-// The snowflakeside is the direction in which there has to be constructed a new wedge
-type snowflakeside = Up = 0 | UpRight = 1 | DownRight = 2 | Down = 3 | DownLeft = 4 | UpLeft = 5
-// snowflakeside, start, length
-type edge = snowflakeside * point * int
-
-let edgeToLine (side, start, length) =
-    let dir =
-        match side with
-        | snowflakeside.Up -> East
-        | snowflakeside.UpRight -> SouthEast
-        | snowflakeside.DownRight -> SouthWest
-        | snowflakeside.Down -> West
-        | snowflakeside.DownLeft -> NorthWest
-        | snowflakeside.UpLeft -> NorthEast
-        | _ -> failwith "Invalid snowflake side"
-    let actualLength = if side = snowflakeside.Up || side = snowflakeside.Down then length * 2 else length
-    (dir, start, actualLength)
+type SnowFlakeSide = Up = 0 | UpRight = 1 | DownRight = 2 | Down = 3 | DownLeft = 4 | UpLeft = 5
 
 let modulo m n = ((n % m) + m) % m
 
-let getside (offset:int) (side : snowflakeside) : snowflakeside = LanguagePrimitives.EnumToValue side |> (+) offset |> modulo 6 |> LanguagePrimitives.EnumOfValue
-let nextside : (snowflakeside -> snowflakeside) = getside 1
-let previousside = getside -1
+let rotateSide (steps:int) (side:SnowFlakeSide) : SnowFlakeSide = LanguagePrimitives.EnumToValue side |> (+) steps |> modulo 6 |> LanguagePrimitives.EnumOfValue
+let nextSide : (SnowFlakeSide -> SnowFlakeSide) = rotateSide 1
+let previousSide = rotateSide -1
 
-// TODO: don't draw the edges just yet, but gather them and flush at the end in the right order
-let kochpattern side start length = 
-    let edge1 = (side, start, length)
+
+// SnowFlakeSide, start, size of snowflake
+type Edge = SnowFlakeSide * point * int
+
+// We assume that we always draw clockwise
+let edgeToLine (side, start, size) =
+    let dir =
+        match side with
+        | SnowFlakeSide.Up -> East
+        | SnowFlakeSide.UpRight -> SouthEast
+        | SnowFlakeSide.DownRight -> SouthWest
+        | SnowFlakeSide.Down -> West
+        | SnowFlakeSide.DownLeft -> NorthWest
+        | SnowFlakeSide.UpLeft -> NorthEast
+        | _ -> failwith "Invalid snowflake side"
+    let length = if side = SnowFlakeSide.Up || side = SnowFlakeSide.Down then size * 2 else size
+    (dir, start, length)
+
+// The SnowFlakeSide is the direction in which there has to be constructed a new wedge
+let kochpattern side start size = 
+    let edge1 = (side, start, size)
     let start2 = edge1 |> edgeToLine |> lineEnd
-    let edge2 = (previousside side, start2, length)
+    let edge2 = (previousSide side, start2, size)
     let start3 = edge2 |> edgeToLine |> lineEnd
-    let edge3 = (nextside side, start3, length)
+    let edge3 = (nextSide side, start3, size)
     let start4 = edge3 |> edgeToLine |> lineEnd
-    let edge4 = (side, start4, length)
+    let edge4 = (side, start4, size)
     [edge1; edge2; edge3; edge4]
 
-let processEdge edge =
-    let (side, start, length) = edge
-    let third = length / 3
-    if third > 0 then
-        kochpattern side start third
-    else []
+let processEdge (side, start, size) =
+    let nextsize = size / 3
+    if nextsize > 0 then
+        Some (kochpattern side start nextsize)
+    else None
 
 let rec processEdges edges =
     match edges with
     | edge::rest -> 
-        let result = processEdge edge
-        // if we encounter an empty expansion, we quit, so the expansions must be done in the right order
-        if not result.IsEmpty then processEdges (rest @ result) else edges
+        // If we fail to expand an edge, we quit, so the expansions must be done in the right order
+        match processEdge edge with
+        | Some result -> processEdges (rest @ result)
+        | None -> edges
     | [] -> []
 
 let run : char[,] =
-    let order = 4
+    let order = 3
 
     let size = pown 3 order
     // A snowflake of size n needs 2n x n+1 space
     let grid = Array2D.init<char> (2 * size) (size + size / 3) (fun x y -> ' ')
 
     let start = (0, size / 3)
-    let edge1 = (snowflakeside.Up, start, size);
+    let edge1 = (SnowFlakeSide.Up, start, size);
     let end1 = edge1 |> edgeToLine |> lineEnd
-    let edge2 = (snowflakeside.DownRight, end1, size);
+    let edge2 = (SnowFlakeSide.DownRight, end1, size);
     let end2 = edge2 |> edgeToLine |> lineEnd
-    let edge3 = (snowflakeside.DownLeft, end2, size);
+    let edge3 = (SnowFlakeSide.DownLeft, end2, size);
     let edges = [ edge1; edge2; edge3 ]
 
     let edgesToDraw = processEdges edges
-     // sort result s.t. Up and Down are drawn first
-    let lines = edgesToDraw |> List.sortBy (fun (dir, _, _) -> if dir = snowflakeside.Up || dir = snowflakeside.Down then 0 else 1) |> List.map edgeToLine
+     // Sort result s.t. Up and Down are drawn first
+    let lines = edgesToDraw |> List.sortBy (fun (dir, _, _) -> if dir = SnowFlakeSide.Up || dir = SnowFlakeSide.Down then 0 else 1) |> List.map edgeToLine
     try
         List.map (drawLine grid) lines |> ignore
     with
