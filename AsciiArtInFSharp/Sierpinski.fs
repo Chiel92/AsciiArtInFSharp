@@ -28,8 +28,7 @@ let blanks (s:string) = Seq.map (fun _ -> ' ') s |> String.Concat
 
 let rec sierpinski (n:int) : string list =
     match n with 
-    //| 0 -> ["###";"###"]
-    | 0 -> ["#"]
+    | 0 -> ["###";"###"]
     | _ -> 
         let x = sierpinski (n-1)
         let y = List.map blanks x

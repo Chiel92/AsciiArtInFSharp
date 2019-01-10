@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Utils.fs" />
     <Compile Include="AsciiDraw.fs" />
     <Compile Include="Sierpinski.fs" />
     <Compile Include="Koch.fs" />
